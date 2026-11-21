@@ -1,0 +1,118 @@
+{
+  "idle": [
+    {
+      "id": "HQVL9004",
+      "state": "idle",
+      "category": "ожидание чекушки",
+      "src": "assets/videos/idle_HQVL9004.webm",
+      "poster": "assets/videos/idle_HQVL9004_poster.png",
+      "duration": 6.733,
+      "frames": 202
+    },
+    {
+      "id": "MYAF8159",
+      "state": "idle",
+      "category": "ожидание чекушки",
+      "src": "assets/videos/idle_MYAF8159.webm",
+      "poster": "assets/videos/idle_MYAF8159_poster.png",
+      "duration": 6.2,
+      "frames": 186
+    }
+  ],
+  "eat": [
+    {
+      "id": "NUGU1851",
+      "state": "eat",
+      "category": "поедание чекушки",
+      "src": "assets/videos/eat_NUGU1851.webm",
+      "poster": "assets/videos/eat_NUGU1851_poster.png",
+      "duration": 5.633,
+      "frames": 169
+    }
+  ],
+  "win": [
+    {
+      "id": "AOMM8677",
+      "state": "win",
+      "category": "Победа",
+      "src": "assets/videos/win_AOMM8677.webm",
+      "poster": "assets/videos/win_AOMM8677_poster.png",
+      "duration": 7.867,
+      "frames": 236
+    },
+    {
+      "id": "GUQU0896",
+      "state": "win",
+      "category": "Победа",
+      "src": "assets/videos/win_GUQU0896.webm",
+      "poster": "assets/videos/win_GUQU0896_poster.png",
+      "duration": 5.9,
+      "frames": 177
+    }
+  ],
+  "lose": [
+    {
+      "id": "AFEM3498",
+      "state": "lose",
+      "category": "Проигрыш",
+      "src": "assets/videos/lose_AFEM3498.webm",
+      "poster": "assets/videos/lose_AFEM3498_poster.png",
+      "duration": 3.5,
+      "frames": 105
+    },
+    {
+      "id": "CHBA0977",
+      "state": "lose",
+      "category": "Проигрыш",
+      "src": "assets/videos/lose_CHBA0977.webm",
+      "poster": "assets/videos/lose_CHBA0977_poster.png",
+      "duration": 6.767,
+      "frames": 203
+    },
+    {
+      "id": "JJRD7341",
+      "state": "lose",
+      "category": "Проигрыш",
+      "src": "assets/videos/lose_JJRD7341.webm",
+      "poster": "assets/videos/lose_JJRD7341_poster.png",
+      "duration": 7.9,
+      "frames": 237
+    },
+    {
+      "id": "JPCI2697",
+      "state": "lose",
+      "category": "Проигрыш",
+      "src": "assets/videos/lose_JPCI2697.webm",
+      "poster": "assets/videos/lose_JPCI2697_poster.png",
+      "duration": 8.533,
+      "frames": 256
+    },
+    {
+      "id": "LDLX9404",
+      "state": "lose",
+      "category": "Проигрыш",
+      "src": "assets/videos/lose_LDLX9404.webm",
+      "poster": "assets/videos/lose_LDLX9404_poster.png",
+      "duration": 7.033,
+      "frames": 211
+    },
+    {
+      "id": "RGDY6851",
+      "state": "lose",
+      "category": "Проигрыш",
+      "src": "assets/videos/lose_RGDY6851.webm",
+      "poster": "assets/videos/lose_RGDY6851_poster.png",
+      "duration": 5.867,
+      "frames": 176
+    },
+    {
+      "id": "XKZE9004",
+      "state": "lose",
+      "category": "Проигрыш",
+      "src": "assets/videos/lose_XKZE9004.webm",
+      "poster": "assets/videos/lose_XKZE9004_poster.png",
+      "duration": 1.6,
+      "frames": 48
+    }
+  ]
+}
