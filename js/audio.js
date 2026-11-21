@@ -1,10 +1,10 @@
-// Procedural Web Audio API sound effects + Mellstroy Background Music Radio with Volume Controls
+// Web Audio API Sound Effects + iOS-Compatible Web Audio Background Music Radio & Voice Gain
 class SoundManager {
   constructor() {
     this.ctx = null;
     this.muted = false;
+    this.unlocked = false;
 
-    // Load saved volume settings or defaults (Idle Mellstroy loud by default, BGM balanced)
     const saved = this.loadVolumes();
     this.bgmVolume = saved.bgm ?? 0.22;
     this.idleVolume = saved.idle ?? 0.95;
@@ -22,16 +22,16 @@ class SoundManager {
     this.isDucked = false;
     this.onTrackChange = null;
 
-    this.bgm = new Audio();
-    this.bgm.preload = "auto";
-    // Auto-advance to the next track when current track ends!
-    this.bgm.loop = false;
-    this.bgm.volume = this.getEffectiveBgmVolume();
-    this.bgm.src = this.tracks[0].src;
+    // Web Audio API nodes for BGM (works 100% on iPhone where HTMLAudioElement.volume is read-only)
+    this.bgmGainNode = null;
+    this.bgmSourceNode = null;
+    this.bgmBuffers = {};
+    this.bgmLoadingToken = 0;
+    this.bgmIsPlaying = false;
 
-    this.bgm.addEventListener("ended", () => {
-      this.nextTrack();
-    });
+    // Web Audio API GainNode for Character Video Voice on iOS/Desktop
+    this.voiceGainNode = null;
+    this.connectedVideoEl = null;
   }
 
   loadVolumes() {
@@ -57,8 +57,81 @@ class SoundManager {
   }
 
   getEffectiveBgmVolume() {
+    if (this.muted) return 0;
     const base = Math.max(0, Math.min(1, this.bgmVolume));
-    return this.isDucked ? base * 0.28 : base;
+    return this.isDucked ? base * 0.25 : base;
+  }
+
+  ensureContext() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        this.ctx = new AudioCtx();
+        this.bgmGainNode = this.ctx.createGain();
+        this.bgmGainNode.gain.value = this.getEffectiveBgmVolume();
+        this.bgmGainNode.connect(this.ctx.destination);
+      }
+    }
+    return this.ctx;
+  }
+
+  init() {
+    const ctx = this.ensureContext();
+    if (!ctx) return;
+
+    if (ctx.state === "suspended") {
+      ctx.resume().catch(() => {});
+    }
+
+    // Play 1-sample silent buffer on first user gesture to permanently unlock iOS Safari Web Audio
+    if (!this.unlocked) {
+      try {
+        const buf = ctx.createBuffer(1, 1, 22050);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(0);
+        this.unlocked = true;
+      } catch (_) {}
+    }
+
+    if (!this.bgmIsPlaying && !this.muted) {
+      this.playTrackAtIndex(this.currentTrackIdx);
+    }
+  }
+
+  connectVideoElement(videoEl) {
+    const ctx = this.ensureContext();
+    if (!ctx || this.connectedVideoEl === videoEl) return;
+    try {
+      const mediaSrc = ctx.createMediaElementSource(videoEl);
+      this.voiceGainNode = ctx.createGain();
+      this.voiceGainNode.gain.value = this.muted ? 0 : this.idleVolume;
+      mediaSrc.connect(this.voiceGainNode);
+      this.voiceGainNode.connect(ctx.destination);
+      this.connectedVideoEl = videoEl;
+    } catch (_) {
+      // Fallback if createMediaElementSource is not allowed
+    }
+  }
+
+  setVoiceVolume(vol) {
+    const v = this.muted ? 0 : Math.max(0, Math.min(1.5, vol));
+    if (this.voiceGainNode && this.ctx) {
+      this.voiceGainNode.gain.setValueAtTime(v, this.ctx.currentTime);
+    }
+    if (this.connectedVideoEl) {
+      this.connectedVideoEl.volume = Math.max(0, Math.min(1, v));
+    }
+  }
+
+  updateBgmGain() {
+    if (this.bgmGainNode && this.ctx) {
+      this.bgmGainNode.gain.setValueAtTime(
+        this.getEffectiveBgmVolume(),
+        this.ctx.currentTime
+      );
+    }
   }
 
   setVolumes({ bgm, idle, reaction, sfx }) {
@@ -66,49 +139,74 @@ class SoundManager {
     if (typeof idle === "number") this.idleVolume = Math.max(0, Math.min(1, idle));
     if (typeof reaction === "number") this.reactionVolume = Math.max(0, Math.min(1, reaction));
     if (typeof sfx === "number") this.sfxVolume = Math.max(0, Math.min(1, sfx));
-    this.bgm.volume = this.getEffectiveBgmVolume();
+    this.updateBgmGain();
     this.saveVolumes();
-  }
-
-  init() {
-    if (!this.ctx) {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (AudioCtx) {
-        this.ctx = new AudioCtx();
-      }
-    }
-    if (this.ctx && this.ctx.state === "suspended") {
-      this.ctx.resume().catch(() => {});
-    }
-    this.startBgm();
-  }
-
-  startBgm() {
-    if (this.muted) return;
-    this.bgm.volume = this.getEffectiveBgmVolume();
-    if (this.bgm.paused) {
-      this.bgm.play().catch(() => {});
-    }
   }
 
   setBgmDucked(ducked) {
     this.isDucked = ducked;
-    this.bgm.volume = this.getEffectiveBgmVolume();
+    this.updateBgmGain();
   }
 
-  nextTrack() {
-    this.currentTrackIdx = (this.currentTrackIdx + 1) % this.tracks.length;
+  async playTrackAtIndex(idx) {
+    const ctx = this.ensureContext();
+    if (!ctx) return;
+
+    this.currentTrackIdx = ((idx % this.tracks.length) + this.tracks.length) % this.tracks.length;
     const tr = this.tracks[this.currentTrackIdx];
-    this.bgm.src = tr.src;
-    this.bgm.currentTime = 0;
-    this.bgm.volume = this.getEffectiveBgmVolume();
-    if (!this.muted) {
-      this.bgm.play().catch(() => {});
-    }
     if (typeof this.onTrackChange === "function") {
       this.onTrackChange(tr);
     }
-    return tr;
+
+    // Stop previous track source
+    if (this.bgmSourceNode) {
+      try {
+        this.bgmSourceNode.onended = null;
+        this.bgmSourceNode.stop();
+        this.bgmSourceNode.disconnect();
+      } catch (_) {}
+      this.bgmSourceNode = null;
+    }
+
+    this.bgmIsPlaying = true;
+    const token = ++this.bgmLoadingToken;
+
+    try {
+      let audioBuf = this.bgmBuffers[tr.src];
+      if (!audioBuf) {
+        const res = await fetch(tr.src);
+        const arr = await res.arrayBuffer();
+        audioBuf = await new Promise((resolve, reject) => {
+          ctx.decodeAudioData(arr, resolve, reject);
+        });
+        this.bgmBuffers[tr.src] = audioBuf;
+      }
+
+      if (token !== this.bgmLoadingToken) return;
+
+      const srcNode = ctx.createBufferSource();
+      srcNode.buffer = audioBuf;
+      srcNode.loop = false;
+      srcNode.connect(this.bgmGainNode);
+      this.updateBgmGain();
+
+      srcNode.onended = () => {
+        if (token === this.bgmLoadingToken && this.bgmIsPlaying) {
+          this.nextTrack();
+        }
+      };
+
+      this.bgmSourceNode = srcNode;
+      srcNode.start(0);
+    } catch (_) {
+      this.bgmIsPlaying = false;
+    }
+  }
+
+  nextTrack() {
+    const nextIdx = (this.currentTrackIdx + 1) % this.tracks.length;
+    this.playTrackAtIndex(nextIdx);
+    return this.tracks[nextIdx];
   }
 
   getCurrentTrack() {
@@ -117,9 +215,9 @@ class SoundManager {
 
   toggleMute() {
     this.muted = !this.muted;
-    this.bgm.muted = this.muted;
-    if (!this.muted) {
-      this.startBgm();
+    this.updateBgmGain();
+    if (!this.muted && !this.bgmIsPlaying) {
+      this.playTrackAtIndex(this.currentTrackIdx);
     }
     return this.muted;
   }

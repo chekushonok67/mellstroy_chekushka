@@ -1,35 +1,37 @@
 // Cut the Rope Parody: Меллстрой & Чекушок (HTML5 Canvas + Matter.js)
+// Universal iOS Safari (iPhone) + Android + Desktop compatible (Stacked-Alpha H.264 MP4 + Web Audio GainNode)
 (() => {
   const { Engine, World, Bodies, Body, Constraint, Vector } = Matter;
 
   const CANVAS_W = 540;
   const CANVAS_H = 760;
+  const VID_W = 240;
+  const VID_H = 240;
 
   const DEFAULT_MANIFEST = {
     idle: [
-      { id: "HQVL9004", state: "idle", src: "assets/videos/idle_HQVL9004.webm", poster: "assets/videos/idle_HQVL9004_poster.png" },
-      { id: "MYAF8159", state: "idle", src: "assets/videos/idle_MYAF8159.webm", poster: "assets/videos/idle_MYAF8159_poster.png" }
+      { id: "HQVL9004", state: "idle", mp4: "assets/videos/idle_HQVL9004.mp4", poster: "assets/videos/idle_HQVL9004_poster.png" },
+      { id: "MYAF8159", state: "idle", mp4: "assets/videos/idle_MYAF8159.mp4", poster: "assets/videos/idle_MYAF8159_poster.png" }
     ],
     eat: [
-      { id: "NUGU1851", state: "eat", src: "assets/videos/eat_NUGU1851.webm", poster: "assets/videos/eat_NUGU1851_poster.png" }
+      { id: "NUGU1851", state: "eat", mp4: "assets/videos/eat_NUGU1851.mp4", poster: "assets/videos/eat_NUGU1851_poster.png" }
     ],
     win: [
-      { id: "AOMM8677", state: "win", src: "assets/videos/win_AOMM8677.webm", poster: "assets/videos/win_AOMM8677_poster.png" },
-      { id: "GUQU0896", state: "win", src: "assets/videos/win_GUQU0896.webm", poster: "assets/videos/win_GUQU0896_poster.png" },
-      { id: "NUGU1851", state: "eat", src: "assets/videos/eat_NUGU1851.webm", poster: "assets/videos/eat_NUGU1851_poster.png" }
+      { id: "AOMM8677", state: "win", mp4: "assets/videos/win_AOMM8677.mp4", poster: "assets/videos/win_AOMM8677_poster.png" },
+      { id: "GUQU0896", state: "win", mp4: "assets/videos/win_GUQU0896.mp4", poster: "assets/videos/win_GUQU0896_poster.png" },
+      { id: "NUGU1851", state: "eat", mp4: "assets/videos/eat_NUGU1851.mp4", poster: "assets/videos/eat_NUGU1851_poster.png" }
     ],
     lose: [
-      { id: "AFEM3498", state: "lose", src: "assets/videos/lose_AFEM3498.webm", poster: "assets/videos/lose_AFEM3498_poster.png" },
-      { id: "CHBA0977", state: "lose", src: "assets/videos/lose_CHBA0977.webm", poster: "assets/videos/lose_CHBA0977_poster.png" },
-      { id: "JJRD7341", state: "lose", src: "assets/videos/lose_JJRD7341.webm", poster: "assets/videos/lose_JJRD7341_poster.png" },
-      { id: "JPCI2697", state: "lose", src: "assets/videos/lose_JPCI2697.webm", poster: "assets/videos/lose_JPCI2697_poster.png" },
-      { id: "LDLX9404", state: "lose", src: "assets/videos/lose_LDLX9404.webm", poster: "assets/videos/lose_LDLX9404_poster.png" },
-      { id: "RGDY6851", state: "lose", src: "assets/videos/lose_RGDY6851.webm", poster: "assets/videos/lose_RGDY6851_poster.png" },
-      { id: "XKZE9004", state: "lose", src: "assets/videos/lose_XKZE9004.webm", poster: "assets/videos/lose_XKZE9004_poster.png" }
+      { id: "AFEM3498", state: "lose", mp4: "assets/videos/lose_AFEM3498.mp4", poster: "assets/videos/lose_AFEM3498_poster.png" },
+      { id: "CHBA0977", state: "lose", mp4: "assets/videos/lose_CHBA0977.mp4", poster: "assets/videos/lose_CHBA0977_poster.png" },
+      { id: "JJRD7341", state: "lose", mp4: "assets/videos/lose_JJRD7341.mp4", poster: "assets/videos/lose_JJRD7341_poster.png" },
+      { id: "JPCI2697", state: "lose", mp4: "assets/videos/lose_JPCI2697.mp4", poster: "assets/videos/lose_JPCI2697_poster.png" },
+      { id: "LDLX9404", state: "lose", mp4: "assets/videos/lose_LDLX9404.mp4", poster: "assets/videos/lose_LDLX9404_poster.png" },
+      { id: "RGDY6851", state: "lose", mp4: "assets/videos/lose_RGDY6851.mp4", poster: "assets/videos/lose_RGDY6851_poster.png" },
+      { id: "XKZE9004", state: "lose", mp4: "assets/videos/lose_XKZE9004.mp4", poster: "assets/videos/lose_XKZE9004_poster.png" }
     ]
   };
 
-  // Geometry helper: line segment AB intersects CD
   function segmentsIntersect(p1, p2, p3, p4) {
     const ccw = (A, B, C) => (C.y - A.y) * (B.x - A.x) > (B.y - A.y) * (C.x - A.x);
     return ccw(p1, p3, p4) !== ccw(p2, p3, p4) && ccw(p1, p2, p3) !== ccw(p1, p2, p4);
@@ -48,20 +50,53 @@
       this.canvas = document.getElementById("game-canvas");
       this.ctx = this.canvas.getContext("2d");
 
-      // Progress state persisted in localStorage
+      // Offscreen canvases for iOS/Universal Stacked-Alpha (240x480 -> 240x240 RGBA)
+      this.alphaWorkCanvas = document.createElement("canvas");
+      this.alphaWorkCanvas.width = VID_W;
+      this.alphaWorkCanvas.height = VID_H * 2;
+      this.alphaWorkCtx = this.alphaWorkCanvas.getContext("2d", { willReadFrequently: true });
+
+      this.charFrameCanvas = document.createElement("canvas");
+      this.charFrameCanvas.width = VID_W;
+      this.charFrameCanvas.height = VID_H;
+      this.charFrameCtx = this.charFrameCanvas.getContext("2d");
+      this.hasValidCharFrame = false;
+
+      // Single DOM-mounted <video> element for 100% iOS Safari autoplay & audio reliability
+      this.charVideo = document.createElement("video");
+      this.charVideo.setAttribute("playsinline", "");
+      this.charVideo.setAttribute("webkit-playsinline", "");
+      this.charVideo.playsInline = true;
+      this.charVideo.preload = "auto";
+      this.charVideo.crossOrigin = "anonymous";
+      this.charVideo.style.position = "fixed";
+      this.charVideo.style.width = "1px";
+      this.charVideo.style.height = "1px";
+      this.charVideo.style.opacity = "0.01";
+      this.charVideo.style.pointerEvents = "none";
+      this.charVideo.style.left = "-10px";
+      this.charVideo.style.top = "-10px";
+      document.body.appendChild(this.charVideo);
+
+      this.charVideo.addEventListener("ended", () => {
+        if (this.charState === "idle") {
+          this.setCharacterState("idle", true);
+        } else {
+          window.soundFX.setBgmDucked(false);
+        }
+      });
+
       this.starsPerLevel = this.loadProgress();
       this.currentLevelIdx = 0;
 
-      // Sprites
       this.sprites = {};
-      // Character video clips pool by state
       this.videoClips = { idle: [], eat: [], win: [], lose: [] };
+      this.blobUrlCache = {};
       this.stateCounters = { idle: 0, eat: 0, win: 0, lose: 0 };
       this.activeClip = null;
       this.charState = "idle";
       this.userInteracted = false;
 
-      // Matter.js instance
       this.engine = null;
       this.bottleBody = null;
       this.ropes = [];
@@ -70,14 +105,12 @@
       this.bumpers = [];
       this.characterPos = { x: 270, y: 650 };
 
-      // Level status
-      this.levelStatus = "playing"; // "playing" | "catching" | "won" | "lost"
+      this.levelStatus = "playing";
       this.collectedStars = 0;
       this.catchAnim = null;
       this.stallTimer = 0;
       this.modalTimer = null;
 
-      // Effects & Input
       this.isPointerDown = false;
       this.lastPointer = null;
       this.bladeTrail = [];
@@ -113,10 +146,6 @@
       await Promise.all([this.loadSprites(), this.loadVideoManifest()]);
       this.renderLevelSelectGrid();
       this.startLevel(0);
-      // Hide level select initially or show it? Let's start right on Level 1 ready to play,
-      // OR keep level select accessible via the top button and HUD menu button!
-      // Wait: let's check what's best: having Level 1 immediately visible or showing Level Select when clicking "Уровни".
-      // Let's hide the level select overlay on initial boot so the game board with Mellstroy and the hanging bottle is immediately playable, while "Уровни" opens the level select screen!
       document.getElementById("screen-levels").classList.add("hidden");
 
       this.lastFrameTime = performance.now();
@@ -150,54 +179,64 @@
       await Promise.all(promises);
     }
 
+    async preloadVideoBlob(mp4Url) {
+      if (this.blobUrlCache[mp4Url]) return this.blobUrlCache[mp4Url];
+      try {
+        const res = await fetch(mp4Url);
+        if (res.ok) {
+          const blob = await res.blob();
+          const bUrl = URL.createObjectURL(blob);
+          this.blobUrlCache[mp4Url] = bUrl;
+          return bUrl;
+        }
+      } catch (_) {}
+      return mp4Url;
+    }
+
     async loadVideoManifest() {
       let manifest = DEFAULT_MANIFEST;
       try {
-        const res = await fetch("assets/videos/manifest.json");
+        const res = await fetch("assets/videos/manifest.json?v=3");
         if (res.ok) {
           manifest = await res.json();
         }
       } catch (_) {}
 
-      // Ensure win pool also includes eat clip if needed
       const states = ["idle", "eat", "win", "lose"];
+      const allMp4Urls = new Set();
+
       for (const st of states) {
         const list = manifest[st] || DEFAULT_MANIFEST[st] || [];
         this.videoClips[st] = list.map((item) => {
-          const video = document.createElement("video");
-          video.src = item.src + "?v=2";
-          video.preload = "auto";
-          video.playsInline = true;
-          video.loop = false;
-          video.muted = window.soundFX.muted;
+          const mp4Url = item.mp4 || (item.src ? item.src.replace(".webm", ".mp4") : "");
+          allMp4Urls.add(mp4Url);
 
           const posterImg = new Image();
           posterImg.src = item.poster;
 
           return {
             ...item,
-            video,
+            mp4Url,
             posterImg
           };
         });
       }
+
+      // Preload idle clips first so initial level starts immediately, then preload remaining clips in background
+      for (const clip of this.videoClips.idle) {
+        await this.preloadVideoBlob(clip.mp4Url);
+      }
+      Promise.all(Array.from(allMp4Urls).map((u) => this.preloadVideoBlob(u))).catch(() => {});
     }
 
     setCharacterState(state, forceNew = false) {
       if (this.charState === state && !forceNew && this.activeClip) {
         return;
       }
-      // Pause previous video
-      if (this.activeClip && this.activeClip.video) {
-        try {
-          this.activeClip.video.pause();
-        } catch (_) {}
-      }
 
       this.charState = state;
       let pool = this.videoClips[state] || [];
       if (state === "win" && this.videoClips.eat && this.videoClips.eat.length > 0) {
-        // Combine eat + win clips so we cycle through all celebratory clips
         pool = [...this.videoClips.eat, ...this.videoClips.win];
       }
       if (!pool.length) return;
@@ -207,29 +246,24 @@
       const clip = pool[idx];
       this.activeClip = clip;
 
-      const vid = clip.video;
+      // Duck BGM during win/eat/lose reaction clips
+      window.soundFX.setBgmDucked(state !== "idle");
+
+      const vid = this.charVideo;
+      const playSrc = this.blobUrlCache[clip.mp4Url] || clip.mp4Url;
+      if (vid.src !== playSrc) {
+        vid.src = playSrc;
+      }
       vid.currentTime = 0;
       vid.loop = false;
-      // Duck background music during win/eat/lose reaction clips so Mellstroy's voice is crystal clear
-      window.soundFX.setBgmDucked(state !== "idle");
-      // Play sound for idle as well as win/eat/lose!
-      vid.muted = window.soundFX.muted;
-      vid.volume = state === "idle" ? window.soundFX.idleVolume : window.soundFX.reactionVolume;
 
-      vid.onended = () => {
-        if (this.charState === "idle") {
-          // Cycle to next idle clip seamlessly so Mellstroy keeps talking in idle
-          this.setCharacterState("idle", true);
-        } else {
-          // Restore background music volume after win/lose speech clip finishes
-          window.soundFX.setBgmDucked(false);
-        }
-      };
+      // Apply voice volume via Web Audio GainNode + element volume
+      this.syncActiveVideoVolume();
+      vid.muted = window.soundFX.muted || !this.userInteracted;
 
       const playPromise = vid.play();
       if (playPromise !== undefined) {
         playPromise.catch(() => {
-          // Autoplay before user gesture fallback: play muted until first click anywhere
           vid.muted = true;
           vid.play().catch(() => {});
         });
@@ -237,24 +271,25 @@
     }
 
     syncActiveVideoVolume() {
-      if (this.activeClip && this.activeClip.video) {
-        this.activeClip.video.volume =
-          this.charState === "idle"
-            ? window.soundFX.idleVolume
-            : window.soundFX.reactionVolume;
-      }
+      const targetVol =
+        this.charState === "idle"
+          ? window.soundFX.idleVolume
+          : window.soundFX.reactionVolume;
+      window.soundFX.setVoiceVolume(targetVol);
     }
 
     unlockAudio() {
-      if (!this.userInteracted) {
-        this.userInteracted = true;
-      }
+      const firstUnlock = !this.userInteracted;
+      this.userInteracted = true;
+
       window.soundFX.init();
-      if (this.activeClip && this.activeClip.video && !window.soundFX.muted) {
-        this.activeClip.video.muted = false;
-        this.syncActiveVideoVolume();
-        if (this.activeClip.video.paused) {
-          this.activeClip.video.play().catch(() => {});
+      window.soundFX.connectVideoElement(this.charVideo);
+      this.syncActiveVideoVolume();
+
+      if (!window.soundFX.muted) {
+        this.charVideo.muted = false;
+        if (this.charVideo.paused || firstUnlock) {
+          this.charVideo.play().catch(() => {});
         }
       }
     }
@@ -272,7 +307,6 @@
         this.unlockAudio();
         const pt = getCanvasPoint(clientX, clientY);
 
-        // Check if player clicked on an Air Cushion first
         for (const c of this.cushions) {
           const d = Math.hypot(pt.x - c.x, pt.y - c.y);
           if (d <= 54) {
@@ -294,7 +328,6 @@
           if (dist >= 3) {
             this.checkRopeCuts(this.lastPointer, pt);
             this.bladeTrail.push({ x: pt.x, y: pt.y, age: 0 });
-            // Spawn tiny blade sparkle
             if (Math.random() < 0.45) {
               this.particles.push({
                 x: pt.x,
@@ -320,12 +353,10 @@
         this.lastPointer = null;
       };
 
-      // Mouse events
       this.canvas.addEventListener("mousedown", (e) => onDown(e.clientX, e.clientY));
       window.addEventListener("mousemove", (e) => onMove(e.clientX, e.clientY));
       window.addEventListener("mouseup", onUp);
 
-      // Touch events
       this.canvas.addEventListener(
         "touchstart",
         (e) => {
@@ -346,9 +377,16 @@
         },
         { passive: false }
       );
-      window.addEventListener("touchend", onUp);
+      window.addEventListener("touchend", () => {
+        this.unlockAudio();
+        onUp();
+      });
 
-      // HUD & Header buttons
+      // Global iOS/Mobile unlock on first tap/click anywhere
+      ["touchstart", "touchend", "pointerdown", "click", "keydown"].forEach((evt) => {
+        window.addEventListener(evt, () => this.unlockAudio(), { once: true, passive: true });
+      });
+
       document.getElementById("hud-btn-restart").addEventListener("click", () => {
         this.unlockAudio();
         this.startLevel(this.currentLevelIdx);
@@ -363,10 +401,6 @@
 
       document.getElementById("hud-btn-menu").addEventListener("click", openLevels);
       document.getElementById("btn-open-levels").addEventListener("click", openLevels);
-
-      // Unlock audio on any click/touch/key anywhere on the page so idle Mellstroy is heard immediately
-      window.addEventListener("pointerdown", () => this.unlockAudio(), { once: true });
-      window.addEventListener("keydown", () => this.unlockAudio(), { once: true });
 
       const updateTrackLabel = (tr) => {
         const titleEl = document.getElementById("track-title");
@@ -447,12 +481,10 @@
       document.getElementById("btn-mute").addEventListener("click", (e) => {
         const muted = window.soundFX.toggleMute();
         e.currentTarget.classList.toggle("muted", muted);
-        if (this.activeClip && this.activeClip.video) {
-          this.activeClip.video.muted = muted;
-        }
+        this.charVideo.muted = muted;
+        this.syncActiveVideoVolume();
       });
 
-      // Result Modal buttons
       document.getElementById("btn-result-levels").addEventListener("click", openLevels);
       document.getElementById("btn-result-restart").addEventListener("click", () => {
         this.unlockAudio();
@@ -466,7 +498,6 @@
         this.startLevel(nextIdx);
       });
 
-      // Keyboard shortcut: R to restart
       window.addEventListener("keydown", (e) => {
         if (e.key === "r" || e.key === "R" || e.key === "к" || e.key === "К") {
           this.startLevel(this.currentLevelIdx);
@@ -545,14 +576,12 @@
       this.characterPos = { x: lvl.character.x, y: lvl.character.y };
       this.setCharacterState("idle", true);
 
-      // Setup Matter.js Physics World
       this.engine = Engine.create();
       this.engine.gravity.y = 1.05;
       this.engine.constraintIterations = 8;
       this.engine.positionIterations = 10;
       this.engine.velocityIterations = 8;
 
-      // Create the Bottle ("чекушок")
       this.bottleBody = Bodies.circle(lvl.bottle.x, lvl.bottle.y, 26, {
         density: 0.0032,
         frictionAir: 0.008,
@@ -561,10 +590,8 @@
       });
       World.add(this.engine.world, this.bottleBody);
 
-      // Build Ropes
       this.ropes = lvl.ropes.map((rDef) => this.createRope(rDef, lvl.bottle));
 
-      // Collectible Stars
       this.stars = lvl.stars.map((s, i) => ({
         x: s.x,
         y: s.y,
@@ -573,7 +600,6 @@
         scale: 1
       }));
 
-      // Air Cushions ("синяя подушка-дулка")
       this.cushions = (lvl.cushions || []).map((c) => ({
         x: c.x,
         y: c.y,
@@ -583,7 +609,6 @@
         squeezeAnim: 0
       }));
 
-      // Bouncy Wooden Bumpers (Level 5)
       this.bumpers = (lvl.bumpers || []).map((b) => {
         const body = Bodies.circle(b.x, b.y, b.radius || 30, {
           isStatic: true,
@@ -636,7 +661,6 @@
         prevBody = nodes[i];
       }
 
-      // Final link attached to the bottle cap so the chekushka hangs upright by its cap
       const lastConstraint = Constraint.create({
         pointA: prevBody ? undefined : { x: rDef.x, y: rDef.y },
         bodyA: prevBody || undefined,
@@ -683,7 +707,6 @@
             distToSegment(pB, p1, p2) < 9;
 
           if (hit) {
-            // Cut this constraint!
             World.remove(this.engine.world, c);
             rope.constraints.splice(i, 1);
             rope.isCut = true;
@@ -708,7 +731,6 @@
       const nx = c.x + Math.cos(c.angle) * nozzleDist;
       const ny = c.y + Math.sin(c.angle) * nozzleDist;
 
-      // Spawn cartoon air rings & wind particles
       for (let i = 0; i < 3; i++) {
         this.airRings.push({
           x: nx + Math.cos(c.angle) * (i * 14),
@@ -740,7 +762,6 @@
         });
       }
 
-      // Apply directional air impulse to the bottle if within air cone
       const bx = this.bottleBody.position.x;
       const by = this.bottleBody.position.y;
       const dx = bx - c.x;
@@ -835,7 +856,6 @@
         progress: 0
       };
 
-      // Update saved best stars for this level
       if (this.collectedStars > (this.starsPerLevel[this.currentLevelIdx] || 0)) {
         this.starsPerLevel[this.currentLevelIdx] = this.collectedStars;
         this.saveProgress();
@@ -844,7 +864,6 @@
       window.soundFX.playWinChime();
       this.setCharacterState("win", true);
 
-      // Celebratory confetti burst around Mellstroy
       for (let i = 0; i < 36; i++) {
         const a = -Math.PI + Math.random() * Math.PI;
         const spd = 3 + Math.random() * 7;
@@ -935,14 +954,12 @@
     update(dt) {
       this.time += dt;
 
-      // Update physics when playing
       if (this.levelStatus === "playing" && this.engine) {
         Engine.update(this.engine, 1000 / 60);
 
         const bx = this.bottleBody.position.x;
         const by = this.bottleBody.position.y;
 
-        // Check Star collisions
         for (const s of this.stars) {
           if (!s.collected) {
             const d = Math.hypot(bx - s.x, by - s.y);
@@ -956,7 +973,6 @@
           }
         }
 
-        // Check Bumper bounce feedback
         for (const b of this.bumpers) {
           const d = Math.hypot(bx - b.x, by - b.y);
           if (d < b.radius + 30 && b.hitAnim <= 0.05) {
@@ -965,7 +981,6 @@
           if (b.hitAnim > 0) b.hitAnim = Math.max(0, b.hitAnim - dt * 4);
         }
 
-        // Check Character catch collision (Mellstroy's hands/mouth target area)
         const targetX = this.characterPos.x;
         const targetY = this.characterPos.y - 12;
         const distToChar = Math.hypot(bx - targetX, by - targetY);
@@ -974,7 +989,6 @@
         } else if (by > CANVAS_H + 68 || bx < -75 || bx > CANVAS_W + 75 || by < -120) {
           this.onBottleLost();
         } else {
-          // Check if all ropes are cut and bottle is stuck away from character
           const allCut = this.ropes.every((r) => r.isCut);
           const speed = Math.hypot(this.bottleBody.velocity.x, this.bottleBody.velocity.y);
           if (allCut && speed < 0.25) {
@@ -990,7 +1004,6 @@
         this.catchAnim.progress = Math.min(1, this.catchAnim.progress + dt * 3.2);
       }
 
-      // Fade cut ropes and remove when invisible
       for (const r of this.ropes) {
         if (r.isCut && r.fadeAlpha > 0) {
           r.fadeAlpha = Math.max(0, r.fadeAlpha - dt * 1.7);
@@ -1003,14 +1016,12 @@
         }
       }
 
-      // Cushion squeeze decay
       for (const c of this.cushions) {
         if (c.squeezeAnim > 0) {
           c.squeezeAnim = Math.max(0, c.squeezeAnim - dt * 4.2);
         }
       }
 
-      // Update blade trail
       for (let i = this.bladeTrail.length - 1; i >= 0; i--) {
         this.bladeTrail[i].age += dt;
         if (this.bladeTrail[i].age > 0.18) {
@@ -1018,7 +1029,6 @@
         }
       }
 
-      // Update particles
       for (let i = this.particles.length - 1; i >= 0; i--) {
         const p = this.particles[i];
         p.x += p.vx;
@@ -1030,7 +1040,6 @@
         }
       }
 
-      // Update air puff rings
       for (let i = this.airRings.length - 1; i >= 0; i--) {
         const ring = this.airRings[i];
         ring.x += ring.vx;
@@ -1044,7 +1053,6 @@
         }
       }
 
-      // Update floating texts
       for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
         const ft = this.floatingTexts[i];
         ft.y -= dt * 36;
@@ -1059,7 +1067,6 @@
       const ctx = this.ctx;
       ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
 
-      // 1. Cardboard Box Background
       if (this.sprites.background) {
         ctx.drawImage(this.sprites.background, 0, 0, CANVAS_W, CANVAS_H);
       } else {
@@ -1067,28 +1074,13 @@
         ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
       }
 
-      // 2. Character (Mellstroy at the bottom of the box)
       this.drawCharacter(ctx);
-
-      // 3. Air Cushions & Airflow indicators
       this.drawCushions(ctx);
-
-      // 4. Bouncy Bumpers
       this.drawBumpers(ctx);
-
-      // 5. Collectible Stars
       this.drawStars(ctx);
-
-      // 6. Ropes & Anchor Pins
       this.drawRopes(ctx);
-
-      // 7. Hanging / Falling Bottle ("чекушок")
       this.drawBottle(ctx);
-
-      // 8. Air Rings, Particles & Floating Texts
       this.drawEffects(ctx);
-
-      // 9. Swipe Blade Trail
       this.drawBladeTrail(ctx);
     }
 
@@ -1098,14 +1090,12 @@
       const drawW = 240;
       const drawH = 240;
 
-      // Subtle floor shadow under Mellstroy
       ctx.save();
       ctx.fillStyle = "rgba(38, 18, 5, 0.32)";
       ctx.beginPath();
       ctx.ellipse(cx, cy + 78, 92, 18, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Target catch halo when bottle is approaching
       if (this.levelStatus === "playing" && this.bottleBody) {
         const d = Math.hypot(
           this.bottleBody.position.x - cx,
@@ -1123,27 +1113,47 @@
         ctx.setLineDash([]);
       }
 
-      // Draw active chroma-keyed transparent video clip (or poster fallback)
+      // Decode Top-Bottom Stacked RGB+Alpha MP4 video frame -> 100% transparent RGBA on iPhone & PC
       let drawn = false;
-      if (this.activeClip) {
-        const vid = this.activeClip.video;
-        if (vid && vid.readyState >= 2) {
-          ctx.drawImage(vid, cx - drawW / 2, cy - drawH / 2 - 22, drawW, drawH);
-          drawn = true;
-        } else if (
-          this.activeClip.posterImg &&
-          this.activeClip.posterImg.complete &&
-          this.activeClip.posterImg.naturalWidth > 0
-        ) {
-          ctx.drawImage(
-            this.activeClip.posterImg,
-            cx - drawW / 2,
-            cy - drawH / 2 - 22,
-            drawW,
-            drawH
-          );
-          drawn = true;
-        }
+      const vid = this.charVideo;
+      if (vid && vid.readyState >= 2 && vid.videoWidth > 0) {
+        try {
+          this.alphaWorkCtx.drawImage(vid, 0, 0, VID_W, VID_H * 2);
+          const imgData = this.alphaWorkCtx.getImageData(0, 0, VID_W, VID_H * 2);
+          const data = imgData.data;
+          const topBytes = VID_W * VID_H * 4;
+          for (let i = 0; i < topBytes; i += 4) {
+            data[i + 3] = data[i + topBytes + 1];
+          }
+          this.charFrameCtx.putImageData(imgData, 0, 0, 0, 0, VID_W, VID_H);
+          this.hasValidCharFrame = true;
+        } catch (_) {}
+      }
+
+      if (
+        this.activeClip &&
+        this.activeClip.posterImg &&
+        this.activeClip.posterImg.complete &&
+        this.activeClip.posterImg.naturalWidth > 0 &&
+        (!vid || vid.readyState < 2)
+      ) {
+        ctx.drawImage(
+          this.activeClip.posterImg,
+          cx - drawW / 2,
+          cy - drawH / 2 - 22,
+          drawW,
+          drawH
+        );
+        drawn = true;
+      } else if (this.hasValidCharFrame) {
+        ctx.drawImage(
+          this.charFrameCanvas,
+          cx - drawW / 2,
+          cy - drawH / 2 - 22,
+          drawW,
+          drawH
+        );
+        drawn = true;
       }
 
       if (!drawn) {
@@ -1163,7 +1173,6 @@
         ctx.translate(c.x, c.y);
         ctx.rotate(c.angle);
 
-        // Subtle animated dotted wind stream preview so player sees direction & range
         const dashOffset = -(this.time * 48) % 24;
         ctx.strokeStyle = "rgba(215, 248, 255, 0.36)";
         ctx.lineWidth = 2.5;
@@ -1177,7 +1186,6 @@
         }
         ctx.setLineDash([]);
 
-        // Squash & stretch animation when clicked
         const sq = Math.sin(c.squeezeAnim * Math.PI);
         const scaleX = 1 + sq * 0.22;
         const scaleY = 1 - sq * 0.22;
@@ -1203,7 +1211,6 @@
         ctx.translate(b.x, b.y);
         ctx.scale(scale, scale);
 
-        // Cartoon wooden/gold bumper wheel
         const r = b.radius;
         ctx.fillStyle = "#261306";
         ctx.beginPath();
@@ -1240,7 +1247,6 @@
         ctx.save();
         ctx.translate(s.x, s.y + bobY);
 
-        // Soft golden glow behind star
         const glow = ctx.createRadialGradient(0, 0, 4, 0, 0, 38);
         glow.addColorStop(0, "rgba(255, 230, 85, 0.55)");
         glow.addColorStop(1, "rgba(255, 200, 30, 0)");
@@ -1275,8 +1281,6 @@
           ctx.lineCap = "round";
           ctx.lineJoin = "round";
 
-          // Draw each constraint link so cut gaps separate properly
-          // 1) Outer dark cartoon outline
           ctx.strokeStyle = "#2b1506";
           ctx.lineWidth = 10;
           ctx.beginPath();
@@ -1287,12 +1291,10 @@
           }
           ctx.stroke();
 
-          // 2) Warm braided hemp rope core
           ctx.strokeStyle = "#d99f59";
           ctx.lineWidth = 6;
           ctx.stroke();
 
-          // 3) Rope twist texture dashes
           ctx.strokeStyle = "#a36829";
           ctx.lineWidth = 4;
           ctx.setLineDash([5, 6]);
@@ -1302,7 +1304,6 @@
           ctx.restore();
         }
 
-        // Draw Anchor Pin on top
         ctx.save();
         const pinSz = 44;
         if (pinSprite) {
@@ -1363,7 +1364,6 @@
     }
 
     drawEffects(ctx) {
-      // Air puff rings
       for (const ring of this.airRings) {
         const alpha = Math.max(0, (ring.life / ring.maxLife) * ring.alpha);
         ctx.save();
@@ -1377,7 +1377,6 @@
         ctx.restore();
       }
 
-      // Particles
       for (const p of this.particles) {
         const alpha = Math.max(0, (p.life / p.maxLife) * p.alpha);
         ctx.save();
@@ -1389,7 +1388,6 @@
         ctx.restore();
       }
 
-      // Floating texts
       for (const ft of this.floatingTexts) {
         const alpha = Math.max(0, ft.life / ft.maxLife);
         ctx.save();
@@ -1418,7 +1416,6 @@
         const ratio = Math.max(0, 1 - p1.age / 0.18);
         if (ratio <= 0) continue;
 
-        // Outer cyan-gold slash glow
         ctx.strokeStyle = `rgba(120, 235, 255, ${ratio * 0.55})`;
         ctx.lineWidth = 14 * ratio;
         ctx.beginPath();
@@ -1426,7 +1423,6 @@
         ctx.lineTo(p1.x, p1.y);
         ctx.stroke();
 
-        // Bright white core blade
         ctx.strokeStyle = `rgba(255, 255, 255, ${ratio * 0.95})`;
         ctx.lineWidth = 5.5 * ratio;
         ctx.beginPath();

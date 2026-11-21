@@ -7,7 +7,8 @@
       "src": "assets/videos/idle_HQVL9004.webm",
       "poster": "assets/videos/idle_HQVL9004_poster.png",
       "duration": 6.733,
-      "frames": 202
+      "frames": 202,
+      "mp4": "assets/videos/idle_HQVL9004.mp4"
     },
     {
       "id": "MYAF8159",
@@ -16,7 +17,8 @@
       "src": "assets/videos/idle_MYAF8159.webm",
       "poster": "assets/videos/idle_MYAF8159_poster.png",
       "duration": 6.2,
-      "frames": 186
+      "frames": 186,
+      "mp4": "assets/videos/idle_MYAF8159.mp4"
     }
   ],
   "eat": [
@@ -27,7 +29,8 @@
       "src": "assets/videos/eat_NUGU1851.webm",
       "poster": "assets/videos/eat_NUGU1851_poster.png",
       "duration": 5.633,
-      "frames": 169
+      "frames": 169,
+      "mp4": "assets/videos/eat_NUGU1851.mp4"
     }
   ],
   "win": [
@@ -38,7 +41,8 @@
       "src": "assets/videos/win_AOMM8677.webm",
       "poster": "assets/videos/win_AOMM8677_poster.png",
       "duration": 7.867,
-      "frames": 236
+      "frames": 236,
+      "mp4": "assets/videos/win_AOMM8677.mp4"
     },
     {
       "id": "GUQU0896",
@@ -47,7 +51,8 @@
       "src": "assets/videos/win_GUQU0896.webm",
       "poster": "assets/videos/win_GUQU0896_poster.png",
       "duration": 5.9,
-      "frames": 177
+      "frames": 177,
+      "mp4": "assets/videos/win_GUQU0896.mp4"
     }
   ],
   "lose": [
@@ -58,7 +63,8 @@
       "src": "assets/videos/lose_AFEM3498.webm",
       "poster": "assets/videos/lose_AFEM3498_poster.png",
       "duration": 3.5,
-      "frames": 105
+      "frames": 105,
+      "mp4": "assets/videos/lose_AFEM3498.mp4"
     },
     {
       "id": "CHBA0977",
@@ -67,7 +73,8 @@
       "src": "assets/videos/lose_CHBA0977.webm",
       "poster": "assets/videos/lose_CHBA0977_poster.png",
       "duration": 6.767,
-      "frames": 203
+      "frames": 203,
+      "mp4": "assets/videos/lose_CHBA0977.mp4"
     },
     {
       "id": "JJRD7341",
@@ -76,7 +83,8 @@
       "src": "assets/videos/lose_JJRD7341.webm",
       "poster": "assets/videos/lose_JJRD7341_poster.png",
       "duration": 7.9,
-      "frames": 237
+      "frames": 237,
+      "mp4": "assets/videos/lose_JJRD7341.mp4"
     },
     {
       "id": "JPCI2697",
@@ -85,7 +93,8 @@
       "src": "assets/videos/lose_JPCI2697.webm",
       "poster": "assets/videos/lose_JPCI2697_poster.png",
       "duration": 8.533,
-      "frames": 256
+      "frames": 256,
+      "mp4": "assets/videos/lose_JPCI2697.mp4"
     },
     {
       "id": "LDLX9404",
@@ -94,7 +103,8 @@
       "src": "assets/videos/lose_LDLX9404.webm",
       "poster": "assets/videos/lose_LDLX9404_poster.png",
       "duration": 7.033,
-      "frames": 211
+      "frames": 211,
+      "mp4": "assets/videos/lose_LDLX9404.mp4"
     },
     {
       "id": "RGDY6851",
@@ -103,7 +113,8 @@
       "src": "assets/videos/lose_RGDY6851.webm",
       "poster": "assets/videos/lose_RGDY6851_poster.png",
       "duration": 5.867,
-      "frames": 176
+      "frames": 176,
+      "mp4": "assets/videos/lose_RGDY6851.mp4"
     },
     {
       "id": "XKZE9004",
@@ -112,7 +123,8 @@
       "src": "assets/videos/lose_XKZE9004.webm",
       "poster": "assets/videos/lose_XKZE9004_poster.png",
       "duration": 1.6,
-      "frames": 48
+      "frames": 48,
+      "mp4": "assets/videos/lose_XKZE9004.mp4"
     }
   ]
 }
